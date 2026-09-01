@@ -34,4 +34,5 @@
         - name: Push to GHCR
           run: |
             echo "${{ secrets.GITHUB_TOKEN }}" | apptainer registry login --username ${{ github.actor }} --password-stdin oras://ghcr.io
-            apptainer push pmdm.sif oras://ghcr.io/${{ github.repository }}/pmdm:latest
+            REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            apptainer push pmdm.sif oras://ghcr.io/${REPO_LOWER}/pmdm:latest
