@@ -1,0 +1,137 @@
+Bootstrap: docker
+From: nvidia/cuda:13.0.0-cudnn-devel-ubuntu22.04
+
+%labels
+    Description PMDM built for CUDA 13.0 host
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update && apt-get install -y \
+        wget git curl vim \
+        libxrender1 libxext6 libx11-6 libgl1 libglib2.0-0 \
+        build-essential ca-certificates \
+        libopenbabel-dev openbabel \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    # Install Miniconda
+    wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+        -O /tmp/miniconda.sh
+    bash /tmp/miniconda.sh -b -p /opt/conda
+    rm /tmp/miniconda.sh
+
+    export PATH="/opt/conda/bin:$PATH"
+    export CI=true
+    hash -r
+
+    conda config --set auto_activate_base false
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main || true
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r || true
+
+    # Clone PMDM
+    git clone https://github.com/Layne-Huang/PMDM.git /opt/PMDM
+
+    # Patches below are because of torch deprecations post PMDM
+    # Patch sascorer.py — rdkit.six was removed from modern RDKit entirely.
+    sed -i 's/from rdkit.six import iteritems/from six import iteritems/' /opt/PMDM/evaluation/sascorer.py
+    sed -i 's/from rdkit.six.moves import cPickle/from six.moves import cPickle/' /opt/PMDM/evaluation/sascorer.py
+
+    # Patch protein_ligand.py — multiple deprecated numpy aliases removed in 1.24+
+    # np.long -> int, np.int -> int, np.bool -> bool
+    sed -i 's/dtype=np\.long/dtype=int/g'  /opt/PMDM/utils/protein_ligand.py
+    sed -i 's/dtype=np\.int\b/dtype=int/g' /opt/PMDM/utils/protein_ligand.py
+    sed -i 's/dtype=np\.bool\b/dtype=bool/g' /opt/PMDM/utils/protein_ligand.py
+
+    # Patch torch load
+    sed -i 's/torch\.load(\(.*\))/torch.load(\1, weights_only=False)/g' /opt/PMDM/sample_batch.py
+    sed -i 's/torch\.load(\(.*\))/torch.load(\1, weights_only=False)/g' /opt/PMDM/sample_for_pdb.py 
+    sed -i 's/torch\.load(\(.*\))/torch.load(\1, weights_only=False)/g' /opt/PMDM/sample_frag.py
+    sed -i 's/torch\.load(\(.*\))/torch.load(\1, weights_only=False)/g' /opt/PMDM/sample_linker.py
+    sed -i 's/torch\.load(\(.*\))/torch.load(\1, weights_only=False)/g' /opt/PMDM/train.py
+    sed -i 's/torch\.load(\(.*\))/torch.load(\1, weights_only=False)/g' /opt/PMDM/train_ddp_op.py
+
+    # Replace np.long with torch.long
+    sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_batch.py
+    sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample.py
+    sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_for_pdb.py
+    sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_frag.py
+    sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_linker.py
+
+    # Create a minimal conda environment — Python and pip only.
+    # Everything else goes through pip to ensure a single consistent numpy ABI.
+    conda create -y -n pmdm python=3.10 pip -c conda-forge --no-default-packages
+    PIP=/opt/conda/envs/pmdm/bin/pip
+
+    # Pin numpy first on its own so all subsequent packages see the same ABI.
+    # 1.26.x is the last numpy 1.x — stable, widely compatible with scipy/PyG/rdkit.
+    $PIP install "numpy==1.26.4"
+
+    # Install PyTorch 2.9 with CUDA 13.0 support
+    $PIP install \
+        torch==2.9.0 torchvision torchaudio \
+        --index-url https://download.pytorch.org/whl/cu130
+
+    # Install scipy pinned to a version built against numpy 1.26
+    $PIP install "scipy==1.13.1"
+
+    # Install PyG core and extensions
+    $PIP install torch-geometric==2.4.0
+    $PIP install \
+        --find-links https://data.pyg.org/whl/torch-2.9.0+cu130.html \
+        torch-cluster \
+        torch-scatter \
+        torch-sparse \
+        torch-spline-conv
+
+    # Install rdkit via pip (numpy-aware wheels available since rdkit 2022.09)
+    $PIP install rdkit
+
+    # Install openbabel Python bindings via pip
+    $PIP install openbabel-wheel
+
+    # Install remaining dependencies
+    $PIP install \
+        pandas matplotlib pillow networkx pyyaml \
+        aiohttp aiosignal async-timeout attrs \
+        biopython easydict einops \
+        frozenlist fsspec joblib lmdb \
+        multidict psutil scikit-learn \
+        threadpoolctl tqdm yarl fonttools \
+        tensorboard six
+
+    # Install oddt
+    $PIP install --no-build-isolation  oddt
+
+    # Install kernel for jupyterhub
+    $PIP install bash_kernel
+
+    # Download QuickVina2
+    wget -q https://github.com/QVina/qvina/raw/master/bin/qvina2.1 \
+        -O /usr/local/bin/qvina2.1
+    chmod +x /usr/local/bin/qvina2.1
+
+%environment
+    export PATH="/opt/conda/envs/pmdm/bin:/opt/conda/bin:/usr/local/bin:$PATH"
+    export CONDA_DEFAULT_ENV=pmdm
+    export PMDM_HOME="/opt/PMDM"
+    export PYTHONPATH="/opt/PMDM:$PYTHONPATH"
+    export DEBIAN_FRONTEND=noninteractive
+
+%runscript
+    exec "$@"
+
+%test
+    export PATH="/opt/conda/envs/pmdm/bin:/opt/conda/bin:$PATH"
+    python --version
+    python -c "import numpy as np; print('NumPy:', np.__version__)"
+    python -c "import scipy; print('SciPy:', scipy.__version__)"
+    python -c "import torch; print('PyTorch:', torch.__version__)"
+    python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
+    python -c "import torch_geometric; print('PyG:', torch_geometric.__version__)"
+    python -c "import torch_cluster; print('torch_cluster OK')"
+    python -c "import torch_scatter; print('torch_scatter OK')"
+    python -c "import torch_sparse; print('torch_sparse OK')"
+    python -c "import rdkit; print('RDKit OK')"
+    python -c "from openbabel import openbabel; print('openbabel OK')"
+    python -c "import six; print('six OK')"
+    echo "All tests passed"
