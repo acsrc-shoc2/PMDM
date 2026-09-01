@@ -7,6 +7,10 @@
         - '.github/workflows/build-container.yml'
     workflow_dispatch:
 
+  permissions:
+    packages: write
+    contents: read
+
   jobs:
     build:
       runs-on: ubuntu-latest
@@ -21,8 +25,13 @@
         - name: Build container
           run: sudo apptainer build pmdm.sif pmdm.def
 
-        - name: Upload built .sif
+        - name: Upload built .sif as artifact
           uses: actions/upload-artifact@v4
           with:
             name: pmdm-sif
             path: pmdm.sif
+
+        - name: Push to GHCR
+          run: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | apptainer registry login --username ${{ github.actor }} --password-stdin oras://ghcr.io
+            apptainer push pmdm.sif oras://ghcr.io/${{ github.repository }}/pmdm:latest
