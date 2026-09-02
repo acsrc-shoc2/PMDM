@@ -17,7 +17,6 @@ BIND_STRING=$(cat bind_syntax.txt)
 GPU_REQUEST="--nv"
 
 CONTAINER_ARGS="$GPU_REQUEST --pwd $PWD $BIND_STRING --shared -a $GROUP_ID"
-CONTAINER_ARGS="$GPU_REQUEST --pwd $PWD $BIND_STRING"
 
 #Add module to create a Jupyter kernel from the container
 module purge
