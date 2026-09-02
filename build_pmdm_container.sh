@@ -16,15 +16,15 @@ chmod 640 pmdm.sif
 DIR="/opt/PMDM/data"
 BIND_STRING=""
 LOCAL_DIR=$(basename $DIR)
+FULL_LOCAL=$(readlink -f $LOCAL_DIR)
 if [ ! -d $LOCAL_DIR ]; then
-  FULL_LOCAL=$(readlink -f $LOCAL_DIR)
   echo "folder $LOCAL_DIR does not exist outside container, creating at $FULL_LOCAL"
   mkdir $FULL_LOCAL
-  wget https://zenodo.org/records/10630921/files/500.pt 
-  wget https://zenodo.org/records/10630921/files/crossdocked_pocket10.tar.gz
   wget -P $LOCAL_DIR https://zenodo.org/records/10630921/files/split_by_name.pt
   wget -P $LOCAL_DIR https://zenodo.org/records/10630921/files/Results.zip
+  wget https://zenodo.org/records/10630921/files/crossdocked_pocket10.tar.gz
   tar -xzvf crossdocked_pocket10.tar.gz -C $LOCAL_DIR
+  wget https://zenodo.org/records/10630921/files/500.pt 
   mv 500.pt $LOCAL_DIR/crossdocked_pocket10/
   chgrp -R $GROUP_ID $LOCAL_DIR
   chmod -R g+rwX $LOCAL_DIR
