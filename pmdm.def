@@ -56,6 +56,9 @@ From: nvidia/cuda:13.0.0-cudnn-devel-ubuntu22.04
     sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_for_pdb.py
     sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_frag.py
     sed -i 's/dtype=np\.long/dtype=torch.long/g' /opt/PMDM/sample_linker.py
+   
+    # Replace savedir with save_sdf
+    sed -i 's/args\.savedir/args.save_sdf/' /opt/PMDM/sample_for_pdb.py
 
     # Create a minimal conda environment — Python and pip only.
     # Everything else goes through pip to ensure a single consistent numpy ABI.
