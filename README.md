@@ -29,11 +29,15 @@ When the container is run, these folders should be mounted using the bind string
 
 ## build_pmdm_container.sl
 
-Is designed to run build_pmdm_container.sh with 60 GB of RAM, 8 Cores and 4 hours.  This is to decouple the process of building the container from running it on the HPC.
+Is designed to run build_pmdm_container.sh, to decouple the process of building the container from running it on the REANNZ HPC.
 
 ## run_pmdm_container.sh 
 
 Is designed to run through the examples of PMDM from the github page (https://github.com/Layne-Huang/PMDM).  It is called by run_pmdm_container.sl
+
+## run_pmdm_container.sl
+
+Is designed to run run_pmdm_container.sh, to decouple the process of running the container from running it on the REANNZ HPC. 
 
 ## build_pmdm_jupyter.sh
 
