@@ -1,5 +1,9 @@
 #!/bin/bash -e
 
+#location to install container and folders to
+PROJDIR=/nesi/project/uoa04517/SHOC2/PMDM
+cd $PROJDIR
+
 #group/project I want to make data and the container accessible to
 GROUP_ID=uoa04517
 
