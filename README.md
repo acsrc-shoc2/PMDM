@@ -1,49 +1,24 @@
-# PMDM Local setup for UoA.
+# PMDM
 
-Files:
+Codebase for SHOC2 containerised version of PMDM. Files:
 
-  | File | Description |
-  |------|-------------|
-  | `pmdm.def` | Apptainer def file to build container |
-  | `build_pmdm_container.sh` | Generic bash script to build PMDM container |
-  | `build_pmdm_container.sl` | SLURM script to run build_pmdm_container.sh with appropriate resources |
-  | `run_pmdm_container.sh` | Generic bash script to run PMDM container non-interactively |
-  | `run_pmdm_container.sl` | SLURM script to run run Pun_pmdm_container.sh with appropriate resources |
-  | `build_pmdm_jupyter.sh` | REANNZ bash script to create a Jupyter Kernel on ondemand ([ondemand.nesi.org.nz](https://ondemand.nesi.org.nz/public/)) |
-  | `run_pmdm_jupyter.ipynb` | Python notebook to run PMDM interactively on ondemand |
+- pmdm.def:	Apptainer definition file to build a container for pmdm
+- build_pmdm.sh:Bash script to build pmdm container
+- pmdm.ipynb:	Jupyter notebook to use pmdm interactively
+- run_pmdm.sl:	SLURM script to run pmdm.ipynb non-interactively
 
-## pmdm.def
+Suggested usage:
 
-Definition file for apptainer build. Changes trigger a github action to rebuild and make available at:  
-apptainer pull pmdm.sif oras://ghcr.io/acsrc-shoc2/pmdm/pmdm:latest
-
-## build_pmdm_container.sh
-
-Is designed as a generic bash script to work outside REANNZ.  
-A group ID is required so that the research group members can use a single instance.
-Right now the group is set to GROUP_ID=uoa04517 as the REANNZ project id.
-After building the container the folders data, logs and configs are created locally so that PMDM can make persistent changes to input/output
-Note that for data, we could set output from crossdocked (https://github.com/Layne-Huang/PMDM#crossdocked), but Binding MOAD (https://github.com/Layne-Huang/PMDM#binding-moad) appears to be offline
-The crossdocked data is large (1.6 GB), so the script checks if it has been already downloaded before trying again.  It also checks the download is complete
-When the container is run, these folders should be mounted using the bind string generated automatically and saved in the file 'bind_syntax.txt'
-
-## build_pmdm_container.sl
-
-Is designed to run build_pmdm_container.sh, to decouple the process of building the container from running it on the REANNZ HPC.
-
-## run_pmdm_container.sh 
-
-Is designed to run through the examples of PMDM from the github page (https://github.com/Layne-Huang/PMDM).  It is called by run_pmdm_container.sl
-
-## run_pmdm_container.sl
-
-Is designed to run run_pmdm_container.sh, to decouple the process of running the container from running it on the REANNZ HPC. 
-
-## build_pmdm_jupyter.sh
-
-Is designed to create a REANNZ JupyterLab kernel from the above container so that PMDM can be run interactively.
-After running, you should see a kernel in the Jupyter section of ondemand (https://ondemand.nesi.org.nz/public/)
-
-## run_pmdm_jupyter.ipynb
-
-A python notebook to run PMDM interactively using the REANNZ JupyterLab kernel
+1. Run ./build_pmdm.sh and make sure pmdm.sif is built
+2. Goto https://ondemand.nesi.org.nz/public/ and select Jupyter Lab
+    - Cluster: SLURM HPC
+    - Project Code: uoa04517
+    - JupyterLab Module: 2026.7.0-foss-2026-4.6.0
+    - Number of Hours: 2
+    - Number of Cores: 4
+    - Memory per Job: 20 GB
+    - GPU: L4
+3. When Open Ondemand starts, choose the select the file 'pmdm.ipynb' from the chooser
+4. Modify file to run your workflow
+5. If you need to run for longer, or a GPU is not available, save changes in pmdm.ipynb, open a terminal kernel in Open Ondemand, and type:
+6. sbatch run_pmdm.sl
