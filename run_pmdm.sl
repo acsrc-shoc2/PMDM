@@ -13,4 +13,4 @@ module load JupyterLab/2026.7.0-foss-2026-4.6.0
 # below is where kernel pmdm is located
 export JUPYTER_PATH=/nesi/project/uoa04517/.jupyter/share/jupyter
 
-papermill run_pmdm_jupyter.ipynb output.ipynb --kernel pmdm
+papermill run_pmdm.ipynb output_pmdm.ipynb --kernel pmdm
