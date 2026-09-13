@@ -102,7 +102,7 @@ From: nvidia/cuda:13.0.0-cudnn-devel-ubuntu22.04
         frozenlist fsspec joblib lmdb \
         multidict psutil scikit-learn \
         threadpoolctl tqdm yarl fonttools \
-        tensorboard six
+        tensorboard six ipywidgets
 
     # Install oddt
     $PIP install --no-build-isolation  oddt

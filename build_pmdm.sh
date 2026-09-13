@@ -67,6 +67,13 @@ if [ ! -d $LOCAL_DIR ]; then
   chmod -R g+rwX $LOCAL_DIR
 fi
 BIND_STRING="${BIND_STRING} -B ${FULL_LOCAL}:${DIR}"
+
+module load JupyterLab/2026.7.0-foss-2026-4.6.0
+APPTAINER_DIR=/opt/PMDM
+
+rm -rf /nesi/project/uoa04517/.jupyter/share/jupyter/kernels/pmdm
+nesi-add-kernel pmdm -cp pmdm.sif --container-args="--nv --pwd $APPTAINER_DIR $BIND_STRING" --shared -a $GROUP_ID
+
 echo To bind local folders to inside container, use the following:
 echo $BIND_STRING
 echo $BIND_STRING > bind_syntax.txt
