@@ -9,8 +9,8 @@ GROUP_ID=uoa04517
 
 #Set up cache folders
 unset APPTAINER_BIND
-APPTAINER_CACHEDIR=$(mktemp -d)
-APPTAINER_TMPDIR=${APPTAINER_CACHEDIR}
+export APPTAINER_CACHEDIR=$(mktemp -d)
+export APPTAINER_TMPDIR=${APPTAINER_CACHEDIR}
 
 #Build container 
 apptainer build --force pmdm.sif pmdm.def
