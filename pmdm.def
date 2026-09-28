@@ -60,6 +60,10 @@ From: nvidia/cuda:13.0.0-cudnn-devel-ubuntu22.04
     # Bug fixes
     sed -i 's/args\.savedir/args.save_sdf/' /opt/PMDM/sample_for_pdb.py
     sed -i "s/config.num_atom if 'num_atom' in config else 8/config.num_atom if 'num_atom' in config else 10/" /opt/PMDM/models/epsnet/MDM_pocket_coor_shared.py
+
+    # Honour --out_dir in sample_frag.py (upstream ignores it and always writes to <pdb dir>/frag_gen)
+    sed -i "s|sdf_dir = os.path.join(os.path.dirname(args.pdb_path),'frag_gen')|sdf_dir = args.out_dir or os.path.join(os.path.dirname(args.pdb_path),'frag_gen')|" /opt/PMDM/sample_frag.py
+    grep -q "sdf_dir = args.out_dir or" /opt/PMDM/sample_frag.py || { echo "ERROR: sample_frag.py out_dir patch did not apply" >&2; exit 1; }
     
 
     # Create a minimal conda environment — Python and pip only.
